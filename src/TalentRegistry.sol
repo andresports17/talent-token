@@ -8,12 +8,14 @@ import {NodeVoting} from "./NodeVoting.sol";
 import {ComplianceRegistry} from "./ComplianceRegistry.sol";
 import {TalentToken} from "./TalentToken.sol";
 import {SupportVault} from "./SupportVault.sol";
+import {IIdentityVerifier} from "./identity/IIdentityVerifier.sol";
 
 /// @title TalentRegistry
 /// @notice Path from nomination to a live supporter token:
 ///   1. A node holder nominates a talent (category + level: local/regional/national/international).
 ///   2. Node holders vote (one vote per node). Quorum + majority approves.
-///   3. A verifier confirms identity and that the talent is 18 or older. Minors are never tokenized.
+///   3. Identity + 18+ is confirmed automatically from an on-chain credential (verifyIdentityAuto),
+///      or by a human verifier as a fallback. Minors are never tokenized.
 ///   4. The talent consents from their own wallet.
 ///   5. The admin launches the TalentToken and its SupportVault pool.
 contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
@@ -43,6 +45,7 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
 
     ComplianceRegistry public immutable compliance;
     SupportVault public vault;
+    IIdentityVerifier public identityVerifier;
 
     uint256 public talentCount;
     mapping(uint256 => Talent) internal _talents;
@@ -54,6 +57,7 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
     event Consented(uint256 indexed talentId);
     event Launched(uint256 indexed talentId, address token, uint256 supply, uint256 priceUSDC);
     event VaultSet(address vault);
+    event IdentityVerifierSet(address verifier);
 
     error ZeroAddress();
     error AlreadyNominated(address wallet);
@@ -63,6 +67,8 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
     error TalentNotCompliant();
     error VaultNotSet();
     error VaultAlreadySet();
+    error NoIdentityVerifier();
+    error IdentityNotVerified();
 
     constructor(
         address admin,
@@ -87,6 +93,11 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
 
     function setVotingParams(uint256 period, uint256 qBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setVotingParams(period, qBps);
+    }
+
+    function setIdentityVerifier(IIdentityVerifier verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        identityVerifier = verifier;
+        emit IdentityVerifierSet(address(verifier));
     }
 
     // ---------------------------------------------------------------- flow
@@ -145,6 +156,21 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
         t.idCheckRef = idCheckRef;
         t.status = Status.Verified;
         emit IdentityVerified(id, idCheckRef);
+    }
+
+    /// @notice Automated ID + 18+ check. Anyone can trigger it once the nomination is approved;
+    ///         it passes only if the talent's wallet holds a valid verified-adult credential.
+    function verifyIdentityAuto(uint256 id) external {
+        Talent storage t = _talents[id];
+        _requireStatus(t, Status.Approved);
+        IIdentityVerifier v = identityVerifier;
+        if (address(v) == address(0)) revert NoIdentityVerifier();
+        (bool adult, bytes32 ref) = v.verifiedAdult(t.wallet);
+        if (!adult) revert IdentityNotVerified();
+        if (!compliance.isAllowed(t.wallet)) revert TalentNotCompliant();
+        t.idCheckRef = ref;
+        t.status = Status.Verified;
+        emit IdentityVerified(id, ref);
     }
 
     /// @notice Must be called by the talent from their own wallet.

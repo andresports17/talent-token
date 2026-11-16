@@ -10,7 +10,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ComplianceRegistry} from "./ComplianceRegistry.sol";
 
 /// @title NodeLicense — Talent Scout node licenses
-/// @notice ERC-721 with a hard cap of 5,000. Sold for USDC in price tiers.
+/// @notice ERC-721 with a hard cap of 5,000. Sold for USDC on a step curve:
+///         price = startPrice + priceStep x floor((tokenId - 1) / stepSize).
+///         Default: $500 for nodes 1-100, then +$100 every 100 nodes (last 100 nodes $5,400).
 ///         Paused at deploy. Non-transferable until the admin unlocks transfers (one-way).
 ///         A node gives one vote in talent nominations and milestone releases.
 ///         Nodes earn NO yield, staking rewards or revenue share.
@@ -28,15 +30,16 @@ contract NodeLicense is ERC721, AccessControl, Pausable, ReentrancyGuard {
     uint256 public maxPerWallet;
     bool public transfersUnlocked;
 
-    /// @notice tierCaps[i] is the last token id sold at tierPrices[i] (USDC, 6 decimals).
-    uint256[] public tierCaps;
-    uint256[] public tierPrices;
+    /// @notice Pricing curve, USDC base units (6 decimals).
+    uint256 public startPrice;
+    uint256 public priceStep;
+    uint256 public stepSize;
 
     mapping(address => uint256) public mintedBy;
     string private _baseTokenURI;
 
     event NodesPurchased(address indexed buyer, uint256 firstId, uint256 quantity, uint256 cost);
-    event TiersSet(uint256[] caps, uint256[] prices);
+    event PricingSet(uint256 startPrice, uint256 priceStep, uint256 stepSize);
     event TransfersUnlocked();
     event TreasurySet(address treasury);
     event MaxPerWalletSet(uint256 maxPerWallet);
@@ -47,15 +50,16 @@ contract NodeLicense is ERC721, AccessControl, Pausable, ReentrancyGuard {
     error WalletCapExceeded();
     error NotCompliant(address account);
     error TransfersLocked();
-    error BadTiers();
+    error BadPricing();
 
     constructor(
         address admin,
         IERC20 usdc_,
         ComplianceRegistry compliance_,
         address treasury_,
-        uint256[] memory caps,
-        uint256[] memory prices,
+        uint256 startPrice_,
+        uint256 priceStep_,
+        uint256 stepSize_,
         uint256 maxPerWallet_
     ) ERC721("Talent Scout Node", "SCOUT") {
         if (admin == address(0) || address(usdc_) == address(0) || address(compliance_) == address(0)) {
@@ -67,21 +71,18 @@ contract NodeLicense is ERC721, AccessControl, Pausable, ReentrancyGuard {
         treasury = treasury_;
         maxPerWallet = maxPerWallet_;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _setTiers(caps, prices);
+        _setPricing(startPrice_, priceStep_, stepSize_);
         _pause();
     }
 
     // ---------------------------------------------------------------- buying
 
     function priceOf(uint256 tokenId) public view returns (uint256) {
-        uint256 n = tierCaps.length;
-        for (uint256 i; i < n; ++i) {
-            if (tokenId <= tierCaps[i]) return tierPrices[i];
-        }
-        revert SoldOut();
+        if (tokenId == 0 || tokenId > MAX_SUPPLY) revert SoldOut();
+        return startPrice + priceStep * ((tokenId - 1) / stepSize);
     }
 
-    /// @notice USDC cost of buying `quantity` nodes right now (can span tiers).
+    /// @notice USDC cost of buying `quantity` nodes right now (can span price steps).
     function quote(uint256 quantity) public view returns (uint256 cost) {
         if (totalMinted + quantity > MAX_SUPPLY) revert SoldOut();
         for (uint256 k = 1; k <= quantity; ++k) {
@@ -123,13 +124,13 @@ contract NodeLicense is ERC721, AccessControl, Pausable, ReentrancyGuard {
         emit TransfersUnlocked();
     }
 
-    /// @notice Tier prices can only change while sales are paused.
-    function setTiers(uint256[] calldata caps, uint256[] calldata prices)
+    /// @notice Pricing can only change while sales are paused.
+    function setPricing(uint256 startPrice_, uint256 priceStep_, uint256 stepSize_)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
         whenPaused
     {
-        _setTiers(caps, prices);
+        _setPricing(startPrice_, priceStep_, stepSize_);
     }
 
     function setTreasury(address treasury_) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -147,23 +148,14 @@ contract NodeLicense is ERC721, AccessControl, Pausable, ReentrancyGuard {
         _baseTokenURI = uri;
     }
 
-    function tierCount() external view returns (uint256) {
-        return tierCaps.length;
-    }
-
     // ---------------------------------------------------------------- internals
 
-    function _setTiers(uint256[] memory caps, uint256[] memory prices) internal {
-        uint256 n = caps.length;
-        if (n == 0 || n != prices.length || caps[n - 1] != MAX_SUPPLY) revert BadTiers();
-        uint256 prev;
-        for (uint256 i; i < n; ++i) {
-            if (caps[i] <= prev || prices[i] == 0) revert BadTiers();
-            prev = caps[i];
-        }
-        tierCaps = caps;
-        tierPrices = prices;
-        emit TiersSet(caps, prices);
+    function _setPricing(uint256 startPrice_, uint256 priceStep_, uint256 stepSize_) internal {
+        if (startPrice_ == 0 || stepSize_ == 0 || stepSize_ > MAX_SUPPLY) revert BadPricing();
+        startPrice = startPrice_;
+        priceStep = priceStep_;
+        stepSize = stepSize_;
+        emit PricingSet(startPrice_, priceStep_, stepSize_);
     }
 
     function _baseURI() internal view override returns (string memory) {

@@ -8,20 +8,16 @@ Run: python3 model/talent_model.py
 USDC = 10**6
 MAX_SUPPLY = 5_000
 
-# (last token id in tier, price in USDC base units) — same as script/Deploy.s.sol
-TIERS = [
-    (500, 100 * USDC),  # Founding Scouts
-    (2_000, 250 * USDC),  # Regional
-    (4_000, 500 * USDC),  # National
-    (5_000, 1_000 * USDC),  # International
-]
+# Step curve — same as script/Deploy.s.sol and NodeLicense.priceOf
+START_PRICE = 500 * USDC  # nodes 1-100
+PRICE_STEP = 100 * USDC  # +$100 ...
+STEP_SIZE = 100  # ... every 100 nodes
 
 
 def price_of(token_id: int) -> int:
-    for cap, price in TIERS:
-        if token_id <= cap:
-            return price
-    raise ValueError("sold out")
+    if not 1 <= token_id <= MAX_SUPPLY:
+        raise ValueError("sold out")
+    return START_PRICE + PRICE_STEP * ((token_id - 1) // STEP_SIZE)
 
 
 def quote(total_minted: int, qty: int) -> int:
@@ -79,13 +75,16 @@ class Pool:
 
 def main() -> None:
     full = quote(0, MAX_SUPPLY)
-    assert full == 2_425_000 * USDC, full
-    assert quote(499, 3) == 600 * USDC
+    assert full == 14_750_000 * USDC, full
+    assert quote(99, 3) == 1_700 * USDC
+    assert price_of(5_000) == 5_400 * USDC
     print(f"Full node sell-out raises {full / USDC:,.0f} USDC to treasury")
-    for i, (cap, price) in enumerate(TIERS):
-        start = TIERS[i - 1][0] + 1 if i else 1
-        n = cap - start + 1
-        print(f"  ids {start:>5}-{cap:<5} {n:>5} nodes x {price / USDC:>6,.0f} = {n * price / USDC:>12,.0f} USDC")
+    raised = 0
+    for batch in range(0, MAX_SUPPLY, STEP_SIZE):
+        raised += STEP_SIZE * price_of(batch + 1)
+        sold = batch + STEP_SIZE
+        if sold in (100, 500, 1_000, 2_000, 3_000, 4_000, 5_000):
+            print(f"  after {sold:>5,} nodes: price ${price_of(sold) / USDC:>5,.0f}, raised {raised / USDC:>12,.0f} USDC")
 
     # Mirrors test_FreezeGivesProRataRefundsOfUnreleased
     p = Pool(2 * USDC)

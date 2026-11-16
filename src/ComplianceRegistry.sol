@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IIdentityVerifier} from "./identity/IIdentityVerifier.sol";
 
 /// @title ComplianceRegistry
 /// @notice KYC allow-list with expiry dates and country blocks.
@@ -20,13 +21,24 @@ contract ComplianceRegistry is AccessControl {
     /// @notice System contracts (e.g. the SupportVault) that hold tokens on behalf of others.
     mapping(address => bool) public exempt;
 
+    /// @notice Automated KYC source (e.g. Coinbase Verifications). Optional.
+    IIdentityVerifier public identityVerifier;
+    /// @notice How long a self-verified approval lasts before the wallet must re-verify.
+    uint64 public autoApprovalPeriod;
+
     event Approved(address indexed account, bytes2 country, uint64 expiresAt);
     event Revoked(address indexed account);
     event CountryBlocked(bytes2 indexed country, bool blocked);
     event ExemptSet(address indexed account, bool exempt);
 
+    event IdentityVerifierSet(address verifier, uint64 autoApprovalPeriod);
+
     error ZeroAddress();
     error ExpiryInPast();
+    error NoIdentityVerifier();
+    error IdentityNotVerified(address account);
+    error CountryIsBlocked(bytes2 country);
+    error BadPeriod();
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
@@ -55,6 +67,39 @@ contract ComplianceRegistry is AccessControl {
         if (account == address(0)) revert ZeroAddress();
         exempt[account] = isExempt;
         emit ExemptSet(account, isExempt);
+    }
+
+    function setIdentityVerifier(IIdentityVerifier verifier, uint64 period) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (period == 0 || period > 366 days) revert BadPeriod();
+        identityVerifier = verifier;
+        autoApprovalPeriod = period;
+        emit IdentityVerifierSet(address(verifier), period);
+    }
+
+    /// @notice Automated KYC: anyone with a valid verified-adult + country credential approves themselves.
+    function selfVerify() external {
+        IIdentityVerifier v = identityVerifier;
+        if (address(v) == address(0)) revert NoIdentityVerifier();
+        (bool adult,) = v.verifiedAdult(msg.sender);
+        (bool hasCountry, bytes2 country) = v.verifiedCountry(msg.sender);
+        if (!adult || !hasCountry) revert IdentityNotVerified(msg.sender);
+        if (countryBlocked[country]) revert CountryIsBlocked(country);
+        uint64 expiresAt = uint64(block.timestamp) + autoApprovalPeriod;
+        records[msg.sender] = Record({expiresAt: expiresAt, country: country});
+        emit Approved(msg.sender, country, expiresAt);
+    }
+
+    /// @notice Anyone can remove a wallet whose credential was revoked or expired.
+    /// @return removed true if the wallet's approval was revoked
+    function recheck(address account) external returns (bool removed) {
+        IIdentityVerifier v = identityVerifier;
+        if (address(v) == address(0)) revert NoIdentityVerifier();
+        (bool adult,) = v.verifiedAdult(account);
+        if (!adult && records[account].expiresAt != 0) {
+            delete records[account];
+            emit Revoked(account);
+            return true;
+        }
     }
 
     function isAllowed(address account) public view returns (bool) {
