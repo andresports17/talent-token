@@ -157,7 +157,7 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
     }
 
     /// @param priceUSDC price of one whole supporter token in USDC base units (6 decimals).
-    function launch(uint256 id, string calldata name_, string calldata symbol_, uint256 supply, uint256 priceUSDC)
+    function launch(uint256 id, string memory name_, string memory symbol_, uint256 supply, uint256 priceUSDC)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
         nonReentrant
@@ -168,13 +168,20 @@ contract TalentRegistry is AccessControl, ReentrancyGuard, NodeVoting {
         if (address(vault) == address(0)) revert VaultNotSet();
         if (!compliance.isAllowed(t.wallet)) revert TalentNotCompliant();
 
-        TalentToken tkn = new TalentToken(name_, symbol_, supply, address(vault), compliance, id);
+        TalentToken tkn = _deployToken(id, name_, symbol_, supply);
         token = address(tkn);
         t.token = token;
         t.status = Status.Launched;
         vault.registerPool(id, tkn, t.wallet, priceUSDC);
 
         emit Launched(id, token, supply, priceUSDC);
+    }
+
+    function _deployToken(uint256 id, string memory name_, string memory symbol_, uint256 supply)
+        internal
+        returns (TalentToken)
+    {
+        return new TalentToken(name_, symbol_, supply, address(vault), compliance, id);
     }
 
     // ---------------------------------------------------------------- views

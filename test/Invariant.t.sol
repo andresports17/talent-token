@@ -20,8 +20,7 @@ contract NodeBuyHandler is CommonBase, StdUtils {
         address b = buyers[who % buyers.length];
         qty = bound(qty, 1, 50);
         vm.prank(b);
-        try target.buy(qty) {}
-        catch {}
+        try target.buy(qty) {} catch {}
     }
 }
 
