@@ -11,11 +11,7 @@ contract NodeLicenseTest is BaseTest {
     }
 
     function test_PausedAtDeploy() public {
-        uint256[] memory caps = new uint256[](1);
-        uint256[] memory prices = new uint256[](1);
-        caps[0] = 5_000;
-        prices[0] = 100 * USDC;
-        NodeLicense fresh = new NodeLicense(admin, usdc, compliance, treasury, caps, prices, 10);
+        NodeLicense fresh = new NodeLicense(admin, usdc, compliance, treasury, START_PRICE, PRICE_STEP, STEP_SIZE, 10);
         assertTrue(fresh.paused());
 
         vm.startPrank(scoutA);
@@ -31,21 +27,34 @@ contract NodeLicenseTest is BaseTest {
         assertEq(firstId, 1);
         assertEq(nodes.ownerOf(3), scoutA);
         assertEq(nodes.totalMinted(), 3);
-        assertEq(usdc.balanceOf(treasury) - before, 300 * USDC);
+        assertEq(usdc.balanceOf(treasury) - before, 1_500 * USDC); // 3 x $500
     }
 
-    function test_QuoteSpansTiers() public {
+    function test_PriceCurve() public view {
+        assertEq(nodes.priceOf(1), 500 * USDC);
+        assertEq(nodes.priceOf(100), 500 * USDC);
+        assertEq(nodes.priceOf(101), 600 * USDC);
+        assertEq(nodes.priceOf(200), 600 * USDC);
+        assertEq(nodes.priceOf(201), 700 * USDC);
+        assertEq(nodes.priceOf(5_000), 5_400 * USDC);
+    }
+
+    function test_QuoteSpansPriceSteps() public {
         vm.prank(admin);
         nodes.setMaxPerWallet(5_000);
-        _buyNodes(scoutA, 499);
-        // ids 500 (100) + 501 (250) + 502 (250)
-        assertEq(nodes.quote(3), 600 * USDC);
+        _buyNodes(scoutA, 99);
+        // ids 100 ($500) + 101 ($600) + 102 ($600)
+        assertEq(nodes.quote(3), 1_700 * USDC);
+    }
+
+    function test_FullSellOutRaises14_75M() public view {
+        assertEq(nodes.quote(5_000), 14_750_000 * USDC);
     }
 
     function test_CannotExceed5000() public {
         vm.prank(admin);
         nodes.setMaxPerWallet(type(uint256).max);
-        usdc.mint(scoutA, 3_000_000 * USDC); // full sell-out costs 2,425,000 USDC
+        // full sell-out costs 14,750,000 USDC; scoutA already holds 20M
         _buyNodes(scoutA, 5_000);
         assertEq(nodes.totalMinted(), 5_000);
 
@@ -112,24 +121,17 @@ contract NodeLicenseTest is BaseTest {
         nodes.transferFrom(scoutA, outsider, 1);
     }
 
-    function test_SetTiersOnlyWhilePausedAndValid() public {
-        uint256[] memory caps = new uint256[](1);
-        uint256[] memory prices = new uint256[](1);
-        caps[0] = 5_000;
-        prices[0] = 50 * USDC;
-
+    function test_SetPricingOnlyWhilePausedAndValid() public {
         vm.prank(admin);
         vm.expectRevert(Pausable.ExpectedPause.selector);
-        nodes.setTiers(caps, prices);
+        nodes.setPricing(250 * USDC, 50 * USDC, 100);
 
         vm.startPrank(admin);
         nodes.pause();
-        caps[0] = 6_000; // last tier must end exactly at 5,000
-        vm.expectRevert(NodeLicense.BadTiers.selector);
-        nodes.setTiers(caps, prices);
-        caps[0] = 5_000;
-        nodes.setTiers(caps, prices);
+        vm.expectRevert(NodeLicense.BadPricing.selector);
+        nodes.setPricing(250 * USDC, 50 * USDC, 0);
+        nodes.setPricing(250 * USDC, 50 * USDC, 100);
         vm.stopPrank();
-        assertEq(nodes.priceOf(1), 50 * USDC);
+        assertEq(nodes.priceOf(101), 300 * USDC);
     }
 }

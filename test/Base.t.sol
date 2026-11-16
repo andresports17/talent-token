@@ -13,6 +13,9 @@ abstract contract BaseTest is Test {
     uint256 internal constant USDC = 1e6;
     uint256 internal constant VOTING_PERIOD = 3 days;
     uint256 internal constant QUORUM_BPS = 2_000; // 20% of nodes must vote
+    uint256 internal constant START_PRICE = 500 * USDC;
+    uint256 internal constant PRICE_STEP = 100 * USDC;
+    uint256 internal constant STEP_SIZE = 100;
 
     address internal admin = makeAddr("admin");
     address internal treasury = makeAddr("treasury");
@@ -35,14 +38,8 @@ abstract contract BaseTest is Test {
         usdc = new MockUSDC();
         compliance = new ComplianceRegistry(admin);
 
-        uint256[] memory caps = new uint256[](4);
-        uint256[] memory prices = new uint256[](4);
-        (caps[0], prices[0]) = (500, 100 * USDC); // Founding Scouts
-        (caps[1], prices[1]) = (2_000, 250 * USDC); // Regional
-        (caps[2], prices[2]) = (4_000, 500 * USDC); // National
-        (caps[3], prices[3]) = (5_000, 1_000 * USDC); // International
-
-        nodes = new NodeLicense(admin, usdc, compliance, treasury, caps, prices, 10);
+        // $500 for nodes 1-100, +$100 every 100 nodes
+        nodes = new NodeLicense(admin, usdc, compliance, treasury, START_PRICE, PRICE_STEP, STEP_SIZE, 10);
         registry = new TalentRegistry(admin, nodes, compliance, VOTING_PERIOD, QUORUM_BPS);
         vault = new SupportVault(admin, usdc, nodes, compliance, VOTING_PERIOD, QUORUM_BPS);
 
@@ -57,7 +54,7 @@ abstract contract BaseTest is Test {
         address[7] memory kyc = [scoutA, scoutB, scoutC, talentWallet, fan1, fan2, treasury];
         for (uint256 i; i < kyc.length; ++i) {
             _kyc(kyc[i]);
-            usdc.mint(kyc[i], 1_000_000 * USDC);
+            usdc.mint(kyc[i], 20_000_000 * USDC);
         }
         usdc.mint(outsider, 1_000_000 * USDC);
     }

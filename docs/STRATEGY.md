@@ -2,13 +2,9 @@
 
 ## Nodes (NodeLicense)
 - Hard cap: 5,000 (constant).
-- Placeholder USDC tiers (owner to confirm before the sale opens):
-  - 1–500 Founding Scouts: 100 USDC
-  - 501–2,000 Regional: 250 USDC
-  - 2,001–4,000 National: 500 USDC
-  - 4,001–5,000 International: 1,000 USDC
-  - A full sell-out raises 2,425,000 USDC to the treasury.
-- Wallet cap: 10 nodes (admin-adjustable). The sale is paused at deploy. Prices can only change while paused.
+- Pricing (set by the owner, Nov 2026): $500 for nodes 1–100, then the price rises $100 after every 100 nodes sold. The last 100 nodes cost $5,400.
+  - Running totals: 1,000 nodes sold → $950,000; 2,000 → $2.9M; 4,000 → $9.8M; all 5,000 → $14,750,000 USDC to the treasury.
+- Wallet cap: 10 nodes (admin-adjustable). The sale is paused at deploy. Pricing can only change while the sale is paused.
 - Transfers are locked until the admin unlocks them (one-way), and then only to KYC'd wallets.
 - Nodes give voting rights only: no yield, staking rewards or revenue share.
 
@@ -17,9 +13,18 @@
 - Only nodes that existed when the ballot opened can vote.
 - Default: 3-day voting period, 20% quorum, and yes must beat no.
 
+## Automated identity (ComplianceRegistry + CoinbaseVerifier)
+- Uses Coinbase Verifications, which are free on-chain credentials on Base:
+  - "Verified Account" means the wallet owner passed Coinbase's ID check. Coinbase only serves adults, so this is the 18+ signal.
+  - "Verified Country" is the owner's country of residence, used for country blocks.
+- KYC: any wallet with both credentials calls `selfVerify()` and is approved for 30 days. Blocked countries are refused. Anyone can call `recheck()` to remove a wallet whose credential was revoked.
+- Talent ID + 18+: once node holders approve a nomination, anyone can call `verifyIdentityAuto()`. It passes only if the talent's wallet holds a valid Verified Account credential.
+- Only credentials signed by the official Coinbase attester count. Revoked or expired ones are rejected.
+- Backup: the admin can still approve KYC by hand, and a human VERIFIER can still verify talents, for people who can't use Coinbase.
+
 ## Talents (TalentRegistry)
-Nominate (by a node holder) → node vote → verifier confirms ID and 18+ → talent consents from own wallet → admin launches the token and vault pool.
-A rejected nomination frees the wallet for a later re-nomination. No personal data goes on-chain, only a reference hash of the ID check.
+Nominate (by a node holder) → node vote → automated ID + 18+ check (or human verifier) → talent consents from own wallet → admin launches the token and vault pool.
+A rejected nomination frees the wallet for a later re-nomination. No personal data goes on-chain, only the credential reference.
 
 ## Supporter tokens and escrow (TalentToken, SupportVault)
 - Fixed supply minted once to the vault. Transfers need both wallets to pass KYC.
@@ -30,9 +35,10 @@ A rejected nomination frees the wallet for a later re-nomination. No personal da
 - Refunds go to the wallet that contributed, not whoever holds the tokens now.
 
 ## Open decisions for the owner
-- Final node prices and wallet cap.
+- Wallet cap (currently 10 nodes per wallet).
+- Whether Coinbase "Verified Account" is acceptable proof of 18+ (confirm with counsel).
 - Voting period and quorum.
-- Who holds the verifier role (ID + age checks) and the KYC role.
+- Who holds the backup human verifier and KYC roles.
 - What happens to unsold supporter tokens left in the vault.
 
 ## Backlog

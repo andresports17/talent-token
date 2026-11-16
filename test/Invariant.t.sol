@@ -35,7 +35,7 @@ contract NodeSupplyInvariantTest is BaseTest {
         address[] memory buyers = new address[](3);
         (buyers[0], buyers[1], buyers[2]) = (scoutA, scoutB, scoutC);
         for (uint256 i; i < 3; ++i) {
-            usdc.mint(buyers[i], 3_000_000 * USDC);
+            usdc.mint(buyers[i], 20_000_000 * USDC);
             vm.prank(buyers[i]);
             usdc.approve(address(nodes), type(uint256).max);
         }
