@@ -25,6 +25,7 @@ Supporter tokens give perks and fan votes, never a share of a talent's wages, tr
 | `TalentRegistry` | Nominate → vote → automated ID + 18+ → consent → launch |
 | `TalentToken` | Fixed-supply ERC-20 supporter token, KYC-gated transfers |
 | `SupportVault` | USDC escrow, milestone releases, refunds |
+| `JourneyPass` | Free soulbound Journey Pass, admin-proposed and verifier-checked milestones (docs/JOURNEY_PASS.md) |
 
 ## Develop
 
@@ -47,3 +48,11 @@ source .env && forge script script/Deploy.s.sol --rpc-url base_sepolia --account
 ```
 
 The node sale stays paused after deploy until pricing is approved. Mainnet requires an outside audit in `audits/` and a Safe multisig as admin.
+
+## Website
+`web/index.html` is the Journey Pass site: connect a wallet, claim a free pass, follow the milestone
+timeline. The admin and verifier panels appear for those wallets. Before deployment it shows a preview
+with a fictional athlete. Published by the `website` workflow to GitHub Pages.
+
+## Base Sepolia deployments
+See `deployments/base-sepolia.json` (written by the `deploy-journey-demo` workflow).

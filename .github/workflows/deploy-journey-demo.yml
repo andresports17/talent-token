@@ -1,0 +1,46 @@
+name: deploy-journey-demo
+
+# Manual button: Actions -> deploy-journey-demo -> Run workflow.
+# Needs two settings in the repo (Settings -> Secrets and variables -> Actions), set by the owner:
+#   secret   DEMO_DEPLOYER_KEY   a THROWAWAY testnet wallet holding Base Sepolia test ETH only
+#   variable JOURNEY_VERIFIER    the verifier wallet address (must differ from the deployer)
+# Base Sepolia only. Never put a wallet that holds real funds here.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install dependencies
+        run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git
+      - name: Test first
+        run: forge test --mc JourneyPassTest
+      - name: Deploy to Base Sepolia
+        env:
+          BASE_SEPOLIA_RPC_URL: https://sepolia.base.org
+          VERIFIER: ${{ vars.JOURNEY_VERIFIER }}
+          DEMO_DEPLOYER_KEY: ${{ secrets.DEMO_DEPLOYER_KEY }}
+        run: |
+          test -n "$DEMO_DEPLOYER_KEY" || { echo "::error::Set the DEMO_DEPLOYER_KEY secret"; exit 1; }
+          test -n "$VERIFIER" || { echo "::error::Set the JOURNEY_VERIFIER variable"; exit 1; }
+          forge script script/DeployJourneyDemo.s.sol --rpc-url "$BASE_SEPOLIA_RPC_URL" \
+            --private-key "$DEMO_DEPLOYER_KEY" --broadcast --slow
+      - name: Record addresses
+        run: |
+          ADDR=$(jq -r '.transactions[] | select(.contractName=="JourneyPass" and .transactionType=="CREATE") | .contractAddress' \
+            broadcast/DeployJourneyDemo.s.sol/84532/run-latest.json | head -1)
+          mkdir -p deployments
+          printf '{\n  "network": "base-sepolia",\n  "chainId": 84532,\n  "JourneyPass": "%s",\n  "demoAthleteId": 1,\n  "verifier": "%s"\n}\n' "$ADDR" "${{ vars.JOURNEY_VERIFIER }}" > deployments/base-sepolia.json
+          cp deployments/base-sepolia.json web/deployment.json
+          echo "### JourneyPass deployed: [$ADDR](https://sepolia.basescan.org/address/$ADDR)" >> "$GITHUB_STEP_SUMMARY"
+          git config user.name "journey-deploy-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add deployments/base-sepolia.json web/deployment.json
+          git commit -m "Record Base Sepolia JourneyPass deployment" && git push || true
