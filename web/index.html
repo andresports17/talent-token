@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talent Journey Pass</title>
+<meta name="description" content="Claim a free Talent Journey Pass and follow verified milestones on Base. Talent Token by Global Lions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE occasion with working parts: a launch site that is also the pilot app
+   IDEA a match-day pass and the touchline of a pitch: chalk lines, stations along the line
+   PICTURE the pass itself, large, beside the milestone touchline that fills as milestones are verified
+   COLOUR pitch green ground, chalk white lines, kit red accent for the action; white sections below
+   TYPE Archivo expanded 800 for titles + Inter for text
+   LAYOUT laptop: title + claim on the left, pass card right, timeline full width beneath; phone: title, pass, claim, timeline */
+:root{color-scheme:light dark;--pitch:#0f4d32;--pitch2:#0b3a26;--chalk:#ffffff;--red:#e63946;--gold:#f5c542;--bg:light-dark(#ffffff,#0d1511);--ink:light-dark(#10201a,#e8efe9);--soft:light-dark(#eef3ef,#16211b);--line:light-dark(#d5ded7,#2a3a31);--mute:light-dark(#4e6158,#9db3a6)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+a{color:inherit}
+h1,h2,h3{font-family:Archivo,Inter,sans-serif;font-stretch:112%;font-weight:800;line-height:1.05;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h1{font-size:clamp(34px,5vw,52px)}h2{font-size:clamp(26px,3.4vw,38px)}h3{font-size:19px}
+.band{padding:clamp(28px,4vw,64px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+nav{background:var(--pitch2);color:#fff;padding:12px max(5vw,16px)}
+nav .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center}
+nav b{font-family:Archivo,sans-serif;font-stretch:112%;font-size:18px;margin-right:auto}
+nav a{text-decoration:none;opacity:.85;padding:8px 0}nav a:hover{opacity:1}
+.hero{background:var(--pitch);color:#fff;background-image:repeating-linear-gradient(90deg,transparent 0 120px,rgba(255,255,255,.035) 120px 240px)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(24px,4vw,56px);align-items:center}
+.lede{font-size:17px;max-width:34em;color:#e3efe7;margin:16px 0 22px}
+.btn{font:600 16px Inter,sans-serif;min-height:48px;padding:0 22px;border-radius:999px;border:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn.red{background:var(--red);color:#fff}.btn.red:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:inherit;border-color:currentColor}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.status{margin-top:14px;font-size:14px;color:#cfe3d6;min-height:22px}
+.note{font-size:13px;color:#b9d3c3;margin-top:10px}
+.pill{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pv{background:#1f9d55;color:#fff}.pp{background:var(--gold);color:#1d1600}.pr{background:var(--red);color:#fff}
+.banner{background:var(--gold);color:#1d1600;font-size:14px;padding:8px max(5vw,16px);text-align:center}
+/* the pass */
+.pass{position:relative;border-radius:22px;background:linear-gradient(150deg,#13653f,#0a3524);border:2px solid rgba(255,255,255,.55);padding:26px 26px 22px;box-shadow:0 18px 0 -6px rgba(0,0,0,.25);overflow:hidden;aspect-ratio:1.55;display:flex;flex-direction:column;justify-content:space-between}
+.pass svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pass>*{position:relative}
+.pass .top{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#d6eadd}
+.pass .nm{font-family:Archivo,sans-serif;font-stretch:112%;font-weight:800;font-size:clamp(24px,3.2vw,36px);line-height:1.05}
+.pass .meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:13px;color:#d6eadd}
+.pass .meta b{display:block;color:#fff;font-size:20px;font-variant-numeric:tabular-nums}
+.pass .stub{position:absolute;right:-1px;top:50%;width:26px;height:52px;border-radius:26px 0 0 26px;background:var(--pitch);transform:translateY(-50%);border:2px solid rgba(255,255,255,.55);border-right:0}
+.pass.unclaimed .meta b{opacity:.45}
+.pass.claimed{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.pass.claimed{animation:none}}
+/* timeline */
+.tl{background:var(--pitch2);color:#fff}
+.track{position:relative;margin-top:26px;padding-top:8px}
+.track:before{content:"";position:absolute;left:19px;top:0;bottom:0;width:3px;background:repeating-linear-gradient(180deg,#fff 0 14px,transparent 14px 22px);opacity:.6}
+.ms{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 0}
+.dot{width:41px;height:41px;border-radius:50%;border:3px solid #fff;background:var(--pitch2);display:grid;place-items:center;font-weight:700;z-index:1}
+.ms.v .dot{background:#1f9d55}.ms.r .dot{background:var(--red)}.ms.p .dot{background:var(--gold);color:#1d1600}
+.ms h3{font-size:18px;margin-bottom:4px}
+.ms .sub{font-size:14px;color:#cfe3d6;overflow-wrap:anywhere}
+.ms .act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ms .act input{flex:1 1 180px}
+.empty{color:#cfe3d6;padding:18px 0}
+/* panels */
+.panel{border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--soft)}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
+input,select{width:100%;font:16px Inter,sans-serif;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.tl input{background:#0d2c1f;color:#fff;border-color:#2f5e47}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-top:24px;counter-reset:s}
+.step{border-top:4px solid var(--pitch);padding-top:12px}
+.step b{display:block;font-family:Archivo,sans-serif;font-stretch:112%;font-size:17px;margin-bottom:4px}
+.step p,.card p{margin:0;color:var(--mute);font-size:15px}
+.bars{margin-top:18px;display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:9.5em minmax(0,1fr) 5.5em;gap:10px;align-items:center;font-size:14px}
+.bar i{display:block;height:14px;border-radius:7px;background:var(--pitch)}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card{border-left:4px solid var(--red);padding:4px 0 4px 14px}
+.card b{display:block;margin-bottom:4px}
+details{border-bottom:1px solid var(--line);padding:14px 0}summary{cursor:pointer;font-weight:600;font-size:17px}
+details p{color:var(--mute);margin:10px 0 0}
+footer{background:var(--pitch2);color:#d6eadd;font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#10201a;color:#fff;padding:12px 18px;border-radius:12px;font-size:15px;max-width:min(92vw,520px);box-shadow:0 8px 30px rgba(0,0,0,.3);display:none;z-index:9}
+.mute{color:var(--mute)}
+@media(max-width:900px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){.hero .wrap,.grid2{grid-template-columns:minmax(0,1fr)}.hero .copy{display:contents}.hero h1,.hero .lede{order:0}.hero .passbox{order:1}.hero .claimbox{order:2}.lede{margin-bottom:0}}
+@media(max-width:600px){.ms{grid-template-columns:42px minmax(0,1fr)}.ms .pill{grid-column:2}.pass{aspect-ratio:auto;min-height:230px;gap:18px}.steps{grid-template-columns:minmax(0,1fr)}.bar{grid-template-columns:8.6em minmax(0,1fr) 4.6em;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="banner" id="banner" hidden></div>
+<nav><div class="wrap"><b>Talent Token</b><a href="#pass">Journey Pass</a><a href="#timeline">Milestones</a><a href="#how">How it works</a><a href="#nodes">Scout Nodes</a><a href="#faq">FAQ</a></div></nav>
+
+<header class="band hero" id="pass"><div class="wrap">
+  <div class="copy">
+    <h1>Back a talent from the first step</h1>
+    <p class="lede">Claim a free Talent Journey Pass, then follow every milestone as it is proposed and checked by an independent verifier. No payment, no trading, just proof you were there early.</p>
+    <div class="claimbox">
+      <div class="row">
+        <button class="btn red" id="claimBtn" type="button">Connect wallet</button>
+        <a class="btn ghost" href="#timeline">See the milestones</a>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <div class="note">Base Sepolia test network. Gas is free test currency. One pass per wallet, and it can never be sold or transferred.</div>
+    </div>
+  </div>
+  <div class="passbox">
+    <div class="pass unclaimed" id="passCard">
+      <svg class="lines" viewBox="0 0 310 200" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.5"><rect x="8" y="8" width="294" height="184" rx="10"/><line x1="155" y1="8" x2="155" y2="192"/><circle cx="155" cy="100" r="34"/><rect x="8" y="58" width="44" height="84"/><rect x="258" y="58" width="44" height="84"/></g></svg>
+      <div class="top"><span id="pcSport">Soccer</span><span id="pcDemo">Journey Pass</span></div>
+      <div><div style="font-size:13px;color:#d6eadd">Supporting</div><div class="nm" id="pcName">Loading athlete</div></div>
+      <div class="meta">
+        <div>Supporter no.<b id="pcSerial">—</b></div>
+        <div>Verified so far<b id="pcVerified">0</b></div>
+        <div>You witnessed<b id="pcWitnessed">—</b></div>
+      </div>
+      <div class="stub"></div>
+    </div>
+  </div>
+</div></header>
+
+<section class="band tl" id="timeline"><div class="wrap">
+  <div class="row" style="justify-content:space-between">
+    <h2>Milestone timeline</h2>
+    <div class="row" id="roleRow"><span style="font-size:14px;color:#cfe3d6">Viewing as</span><span class="pill pv" id="roleTag">Supporter</span></div>
+  </div>
+  <p style="color:#cfe3d6;margin:10px 0 0;max-width:46em">The admin proposes each milestone with a proof link or hash. Only the verifier wallet can mark it Verified or Rejected. Every change is recorded on-chain.</p>
+  <div class="track" id="track"></div>
+  <div class="panel" id="adminPanel" hidden style="margin-top:24px;background:#0d2c1f;border-color:#2f5e47">
+    <h3>Propose a milestone (admin)</h3>
+    <div class="grid2">
+      <div><label for="mTitle">Milestone</label><input id="mTitle" maxlength="80" placeholder="Selected for U-21 trial"></div>
+      <div><label for="mProof">Proof link</label><input id="mProof" placeholder="ipfs://..."></div>
+    </div>
+    <label for="mHash">Proof file fingerprint (optional: a 0x hash, or any text to hash)</label><input id="mHash" placeholder="trial-report.pdf">
+    <div class="row" style="margin-top:14px"><button class="btn red" id="proposeBtn" type="button">Propose milestone</button></div>
+  </div>
+</div></section>
+
+<section class="band" id="how"><div class="wrap">
+  <h2>How Talent Token works</h2>
+  <p class="mute" style="max-width:48em">The Journey Pass is the free front door. Behind it sits a system that lets a community find, verify and back gifted people, starting with soccer and growing into music, academics, business and ministry.</p>
+  <div class="steps">
+    <div class="step"><b>Scouts nominate</b><p>Holders of a Talent Scout Node put a talent forward.</p></div>
+    <div class="step"><b>Nodes vote</b><p>One vote per node decides who moves on.</p></div>
+    <div class="step"><b>Identity and age</b><p>An ID check confirms the talent is 18 or older. Minors are never listed.</p></div>
+    <div class="step"><b>Talent consents</b><p>The talent signs their own consent from their own wallet.</p></div>
+    <div class="step"><b>Journey opens</b><p>Supporters claim passes and follow verified milestones.</p></div>
+  </div>
+</div></section>
+
+<section class="band" id="nodes" style="background:var(--soft)"><div class="wrap grid2">
+  <div>
+    <h2>Talent Scout Nodes</h2>
+    <p class="mute">Only 5,000 will ever exist, fixed in the code. A node gives one vote on talent nominations and on milestone payouts. It earns no yield, rewards or revenue share, and transfers stay locked at launch.</p>
+    <p class="mute">Opening price is $500 for nodes 1 to 100, rising $100 after every 100 sold. The sale is not open: it stays paused until an outside security audit and legal review are complete.</p>
+  </div>
+  <div>
+    <h3>Price per node by batch</h3>
+    <div class="bars" id="bars"></div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <h2>Built-in protections</h2>
+  <div class="grid3" style="margin-top:20px">
+    <div class="card"><b>No money in the pass</b><p>The pass contract has no paid function and refuses any payment sent to it.</p></div>
+    <div class="card"><b>No share of earnings</b><p>Nothing here pays anyone from a talent's wages, transfer fees, prizes or royalties.</p></div>
+    <div class="card"><b>Adults only, by consent</b><p>Real profiles need the node vote, an 18+ ID check and the talent's own on-chain consent.</p></div>
+    <div class="card"><b>Split duties</b><p>The admin proposes milestones; a separate verifier approves or rejects them.</p></div>
+    <div class="card"><b>No personal data on-chain</b><p>Profiles and proofs are stored as links and fingerprints only.</p></div>
+    <div class="card"><b>Test network first</b><p>Everything runs on Base Sepolia until an outside audit is done and a multi-signature wallet holds admin.</p></div>
+  </div>
+</div></section>
+
+<section class="band" id="faq" style="background:var(--soft)"><div class="wrap">
+  <h2>Questions</h2>
+  <details open><summary>Does the pass cost anything?</summary><p>No. Claiming is free. On the test network the small gas fee is paid in free test currency from a faucet.</p></details>
+  <details><summary>Can I sell or give away my pass?</summary><p>No. Each pass is locked to the wallet that claimed it, so it always shows who supported early.</p></details>
+  <details><summary>Who is the athlete in the demo?</summary><p>A fictional player with test data. Real athletes appear only after they pass the ID and age check and give their own consent.</p></details>
+  <details><summary>Where do I get test currency?</summary><p>From a Base Sepolia faucet such as the one in the Coinbase Developer Platform, then switch your wallet to Base Sepolia.</p></details>
+</div></section>
+
+<footer class="band"><div class="wrap">
+  <div><b style="color:#fff">Talent Token</b><br>A Global Lions and Andre Soccer Academy project.<br>Prophet Kerceus André · +1 561 657 5446</div>
+  <div>Test network pilot. Not an offer of securities or investment.<br><span id="contractLine">Contract: not deployed yet</span></div>
+</div></footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+{
+const CHAIN = {id: 84532, hex: '0x14a34', name: 'Base Sepolia', rpc: 'https://sepolia.base.org', explorer: 'https://sepolia.basescan.org'};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STATUS = ['None','Proposed','Verified','Rejected'];
+const PILL = {1:'pp',2:'pv',3:'pr'};
+const DOT = {1:'p',2:'v',3:'r'};
+
+let v = null, pub = null, wallet = null, abi = null;
+const st = {mode: 'preview', address: null, athleteId: 1, account: null, isAdmin: false, isVerifier: false, athlete: null, ms: [], passId: 0, pass: null, witnessed: 0, busy: false, view: 'supporter'};
+
+// Sample data for the preview, used until a contract address is configured. Fictional athlete.
+const now = Math.floor(Date.now()/1000);
+const SAMPLE = {
+  athlete: {name: 'Jordan Reyes (fictional)', sport: 'soccer', demo: true, passCount: 37, verifiedCount: 1, open: true},
+  ms: [
+    {status: 2, title: 'Joined regional development squad', proofURI: 'ipfs://demo/proof-1.json', proofHash: '0x5d1c…a9e4', proposedAt: now-86400*21, decidedAt: now-86400*19, note: 'Confirmed with squad coach'},
+    {status: 3, title: 'Scored in county cup final', proofURI: 'ipfs://demo/proof-x.json', proofHash: '0x77b0…12cd', proposedAt: now-86400*12, decidedAt: now-86400*11, note: 'Match report names a different player'},
+    {status: 1, title: 'Selected for U-21 trial', proofURI: 'ipfs://demo/proof-2.json', proofHash: '0x9a3e…f001', proposedAt: now-86400*3, decidedAt: 0, note: ''},
+    {status: 1, title: 'Signed academy contract', proofURI: 'ipfs://demo/proof-3.json', proofHash: '0xc41f…0b77', proposedAt: now-86400, decidedAt: 0, note: ''}
+  ]
+};
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display='none',4200); }
+function setStatus(msg){ $('status').textContent = msg; }
+function day(ts){ return ts ? new Date(Number(ts)*1000).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''; }
+function short(a){ return a ? a.slice(0,6)+'…'+a.slice(-4) : ''; }
+function proofLink(u){
+  if (!u) return '';
+  let href = '';
+  if (/^ipfs:\/\//.test(u)) href = 'https://ipfs.io/ipfs/' + u.slice(7);
+  else if (/^https:\/\//.test(u)) href = u;
+  return href ? `<a href="${esc(href)}" rel="noopener" target="_blank">${esc(u)}</a>` : esc(u);
+}
+
+function renderBars(){
+  const rows = [];
+  for (let b = 0; b < 49; b += 7) rows.push(b);
+  rows.push(49);
+  const max = 500 + 100*49;
+  $('bars').innerHTML = rows.map(b => {
+    const p = 500 + 100*b;
+    return `<div class="bar"><span>Nodes ${b*100+1}–${b*100+100}</span><span><i style="width:${(p/max*100).toFixed(1)}%"></i></span><span>$${p.toLocaleString()}</span></div>`;
+  }).join('') + `<div class="bar" style="margin-top:6px;font-weight:600"><span>All 5,000</span><span></span><span>$14.75M</span></div>`;
+}
+
+function render(){
+  const a = st.athlete;
+  $('pcName').textContent = a ? a.name : 'No athlete yet';
+  $('pcSport').textContent = a ? (a.sport.charAt(0).toUpperCase()+a.sport.slice(1)) : '';
+  $('pcDemo').textContent = a && a.demo ? 'Demo · test data' : 'Journey Pass';
+  $('pcVerified').textContent = a ? String(a.verifiedCount) : '0';
+  const card = $('passCard');
+  if (st.passId) {
+    $('pcSerial').textContent = '#' + st.pass.serial;
+    $('pcWitnessed').textContent = String(st.witnessed);
+    card.classList.remove('unclaimed');
+  } else {
+    $('pcSerial').textContent = a ? '#' + (Number(a.passCount)+1) : '—';
+    $('pcWitnessed').textContent = '—';
+    card.classList.add('unclaimed');
+  }
+  const btn = $('claimBtn');
+  btn.disabled = st.busy || (a && !a.open && !st.passId);
+  if (!st.account && st.mode === 'live') btn.textContent = 'Connect wallet';
+  else if (st.passId) btn.textContent = 'Pass claimed';
+  else if (a && !a.open) btn.textContent = 'Claims closed';
+  else btn.textContent = st.busy ? 'Waiting for wallet…' : 'Claim free pass';
+  if (st.passId) btn.disabled = true;
+
+  const role = st.isVerifier ? 'Verifier' : st.isAdmin ? 'Admin' : 'Supporter';
+  $('roleTag').textContent = role;
+  $('roleTag').className = 'pill ' + (st.isVerifier ? 'pp' : st.isAdmin ? 'pr' : 'pv');
+  $('adminPanel').hidden = !st.isAdmin;
+  if (st.mode === 'preview') renderPreviewRoles();
+
+  const list = st.ms.map((m,i) => ({...m, i})).reverse();
+  $('track').innerHTML = list.length ? list.map(m => `
+    <div class="ms ${DOT[m.status]}">
+      <div class="dot">${m.i+1}</div>
+      <div>
+        <h3>${esc(m.title)}</h3>
+        <div class="sub">Proposed ${day(m.proposedAt)}${m.decidedAt ? ' · decided ' + day(m.decidedAt) : ''}</div>
+        <div class="sub">Proof: ${proofLink(m.proofURI) || 'fingerprint only'}${m.proofHash && !/^0x0+$/.test(m.proofHash) ? ' · ' + esc(String(m.proofHash).slice(0,10)) + '…' : ''}</div>
+        ${m.note ? `<div class="sub">Verifier note: ${esc(m.note)}</div>` : ''}
+        ${st.isVerifier && m.status === 1 ? `<div class="act"><input id="note${m.i}" maxlength="120" placeholder="Note (optional)" aria-label="Verifier note"><button class="btn red" data-act="verify" data-i="${m.i}" type="button">Verify</button><button class="btn ghost" data-act="reject" data-i="${m.i}" type="button">Reject</button></div>` : ''}
+      </div>
+      <span class="pill ${PILL[m.status]}">${STATUS[m.status]}</span>
+    </div>`).join('') : '<div class="empty">No milestones yet. The first one appears here as soon as the admin proposes it.</div>';
+}
+
+function renderPreviewRoles(){
+  let sel = $('viewAs');
+  if (!sel) {
+    $('roleRow').innerHTML = '<label for="viewAs" style="margin:0;font-size:14px;color:#cfe3d6;font-weight:500">Preview as</label><select id="viewAs" style="width:auto;min-height:40px;background:#0d2c1f;color:#fff;border-color:#2f5e47"><option value="supporter">Supporter</option><option value="admin">Admin</option><option value="verifier">Verifier</option></select><span id="roleTag" hidden></span>';
+    sel = $('viewAs');
+    sel.addEventListener('change', () => { st.view = sel.value; st.isAdmin = sel.value === 'admin'; st.isVerifier = sel.value === 'verifier'; render(); });
+  }
+  sel.value = st.view;
+}
+
+// ---------------------------------------------------------------- live chain
+async function loadLib(){
+  v = await import('https://cdn.jsdelivr.net/npm/viem@2.21.0/+esm');
+  abi = v.parseAbi([
+    'struct Athlete { bool exists; bool open; bool demo; uint32 passCount; uint32 verifiedCount; uint64 createdAt; uint256 registryTalentId; string name; string sport; string profileURI; }',
+    'struct Milestone { uint8 status; uint64 proposedAt; uint64 decidedAt; bytes32 proofHash; string title; string proofURI; string note; }',
+    'struct Pass { uint256 athleteId; uint64 claimedAt; uint32 serial; uint32 verifiedAtClaim; }',
+    'function athlete(uint256 id) view returns (Athlete)',
+    'function milestones(uint256 id) view returns (Milestone[])',
+    'function passOf(uint256 id, address who) view returns (uint256)',
+    'function pass(uint256 tokenId) view returns (Pass)',
+    'function milestonesWitnessed(uint256 tokenId) view returns (uint256)',
+    'function hasRole(bytes32 role, address who) view returns (bool)',
+    'function claim(uint256 id) returns (uint256)',
+    'function proposeMilestone(uint256 id, string title, string proofURI, bytes32 proofHash) returns (uint256)',
+    'function verifyMilestone(uint256 id, uint256 index, string note)',
+    'function rejectMilestone(uint256 id, uint256 index, string note)'
+  ]);
+  const chain = v.defineChain({id: CHAIN.id, name: CHAIN.name, nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18}, rpcUrls: {default: {http: [CHAIN.rpc]}}, blockExplorers: {default: {name: 'Basescan', url: CHAIN.explorer}}, testnet: true});
+  pub = v.createPublicClient({chain, transport: v.http(CHAIN.rpc)});
+  st.chain = chain;
+}
+const read = (fn, args) => pub.readContract({address: st.address, abi, functionName: fn, args});
+
+async function refresh(){
+  if (st.mode !== 'live') return;
+  const id = BigInt(st.athleteId);
+  const [a, ms] = await Promise.all([read('athlete', [id]), read('milestones', [id])]);
+  st.athlete = a.exists ? {...a, passCount: Number(a.passCount), verifiedCount: Number(a.verifiedCount)} : null;
+  st.ms = ms.map(m => ({...m, status: Number(m.status), proposedAt: Number(m.proposedAt), decidedAt: Number(m.decidedAt)}));
+  if (st.account) {
+    const pid = await read('passOf', [id, st.account]);
+    st.passId = Number(pid);
+    if (st.passId) {
+      const [p, w] = await Promise.all([read('pass', [pid]), read('milestonesWitnessed', [pid])]);
+      st.pass = {serial: Number(p.serial)}; st.witnessed = Number(w);
+    }
+    const VER = v.keccak256(v.toBytes('VERIFIER_ROLE'));
+    const [isA, isV] = await Promise.all([read('hasRole', [v.zeroHash, st.account]), read('hasRole', [VER, st.account])]);
+    st.isAdmin = isA; st.isVerifier = isV;
+  }
+  render();
+}
+
+async function connect(){
+  if (!window.ethereum) { toast('No wallet found. Install Coinbase Wallet or MetaMask, then reload.'); return false; }
+  wallet = v.createWalletClient({chain: st.chain, transport: v.custom(window.ethereum)});
+  const [acct] = await wallet.requestAddresses();
+  st.account = acct;
+  try { await wallet.switchChain({id: CHAIN.id}); }
+  catch (e) { await wallet.addChain({chain: st.chain}); }
+  setStatus('Connected ' + short(acct) + ' on Base Sepolia');
+  await refresh();
+  return true;
+}
+
+async function send(fn, args, okMsg){
+  st.busy = true; render();
+  try {
+    const hash = await wallet.writeContract({address: st.address, abi, functionName: fn, args, account: st.account, chain: st.chain});
+    setStatus('Sent. Waiting for confirmation…');
+    await pub.waitForTransactionReceipt({hash});
+    toast(okMsg); setStatus(okMsg);
+    await refresh();
+  } catch (e) {
+    toast((e.shortMessage || e.message || 'Transaction failed').slice(0, 160));
+  } finally { st.busy = false; render(); }
+}
+
+function hashInput(text){
+  const t = text.trim();
+  if (!t) return '0x' + '0'.repeat(64);
+  if (/^0x[0-9a-fA-F]{64}$/.test(t)) return t;
+  return st.mode === 'live' ? v.keccak256(v.toBytes(t)) : '0x' + [...t].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0, 7).toString(16).padStart(8,'0') + '…';
+}
+
+// ---------------------------------------------------------------- actions
+$('claimBtn').addEventListener('click', async () => {
+  if (st.mode === 'preview') {
+    st.passId = 1; st.pass = {serial: st.athlete.passCount + 1}; st.athlete.passCount++; st.witnessed = 0;
+    $('passCard').classList.add('claimed'); render();
+    toast('Preview: pass claimed. On the live site this happens in your wallet.');
+    return;
+  }
+  try {
+    if (!st.account) { await connect(); return; }
+    await send('claim', [BigInt(st.athleteId)], 'Your Journey Pass is claimed');
+    $('passCard').classList.add('claimed');
+  } catch (e) { toast((e.shortMessage || e.message || 'Wallet error').slice(0,160)); }
+});
+
+$('track').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const i = Number(b.dataset.i), note = ($('note'+i)?.value || '').trim();
+  const verify = b.dataset.act === 'verify';
+  if (st.mode === 'preview') {
+    const m = st.ms[i]; m.status = verify ? 2 : 3; m.decidedAt = Math.floor(Date.now()/1000); m.note = note;
+    if (verify) { st.athlete.verifiedCount++; if (st.passId) st.witnessed++; }
+    render(); toast('Preview: milestone ' + (verify ? 'verified' : 'rejected')); return;
+  }
+  send(verify ? 'verifyMilestone' : 'rejectMilestone', [BigInt(st.athleteId), BigInt(i), note], verify ? 'Milestone verified' : 'Milestone rejected');
+});
+
+$('proposeBtn').addEventListener('click', () => {
+  const title = $('mTitle').value.trim(), proof = $('mProof').value.trim(), h = hashInput($('mHash').value);
+  if (!title) { toast('Give the milestone a name.'); return; }
+  if (/["\\]/.test(title)) { toast('Please leave quotes and backslashes out of the name.'); return; }
+  if (!proof && /^0x0+$/.test(h)) { toast('Add a proof link or a file fingerprint.'); return; }
+  if (st.mode === 'preview') {
+    st.ms.push({status: 1, title, proofURI: proof, proofHash: h, proposedAt: Math.floor(Date.now()/1000), decidedAt: 0, note: ''});
+    ['mTitle','mProof','mHash'].forEach(id => $(id).value = ''); render(); toast('Preview: milestone proposed'); return;
+  }
+  send('proposeMilestone', [BigInt(st.athleteId), title, proof, h], 'Milestone proposed');
+});
+
+// ---------------------------------------------------------------- boot
+async function boot(){
+  renderBars();
+  const q = new URLSearchParams(location.search);
+  let addr = q.get('contract'), aid = q.get('athlete');
+  if (!addr) {
+    try { const r = await fetch('deployment.json', {cache: 'no-store'}); if (r.ok) { const d = await r.json(); addr = d.JourneyPass; aid = aid || d.demoAthleteId; } } catch (e) {}
+  }
+  if (addr && /^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    st.address = addr; st.athleteId = Number(aid || 1);
+    try {
+      await loadLib(); st.mode = 'live';
+      $('contractLine').innerHTML = `Contract: <a href="${CHAIN.explorer}/address/${esc(addr)}" target="_blank" rel="noopener">${esc(short(addr))}</a> on Base Sepolia`;
+      await refresh();
+      if (window.ethereum) { const accts = await window.ethereum.request({method: 'eth_accounts'}); if (accts && accts[0]) await connect(); }
+      return;
+    } catch (e) { st.mode = 'preview'; }
+  }
+  const b = $('banner'); b.hidden = false;
+  b.textContent = 'Preview with a fictional athlete and sample data. The live version runs once the pilot contract is deployed to Base Sepolia.';
+  st.athlete = {...SAMPLE.athlete}; st.ms = SAMPLE.ms.map(m => ({...m}));
+  render();
+}
+boot();
+}
+</script>
+</body>
+</html>

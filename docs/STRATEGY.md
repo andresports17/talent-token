@@ -34,6 +34,12 @@ A rejected nomination frees the wallet for a later re-nomination. No personal da
 - Accounting invariant: raised = released + pending + available + refundable.
 - Refunds go to the wallet that contributed, not whoever holds the tokens now.
 
+## Free Journey Pass (JourneyPass) — testnet pilot
+- One free, soulbound pass per wallet per athlete. No price, no payable function, no financial rights.
+- Admin proposes milestones with proof; a separate verifier marks them Verified or Rejected.
+- Demo profiles are fictional. Real profiles only after the registry has Launched the talent (vote, 18+ ID check, consent).
+- Website in web/ (GitHub Pages). See docs/JOURNEY_PASS.md and docs/LAUNCH_CHECKLIST.md.
+
 ## Open decisions for the owner
 - Wallet cap (currently 10 nodes per wallet).
 - Whether Coinbase "Verified Account" is acceptable proof of 18+ (confirm with counsel).
@@ -42,4 +48,4 @@ A rejected nomination frees the wallet for a later re-nomination. No personal da
 - What happens to unsold supporter tokens left in the vault.
 
 ## Backlog
-Merkle allow-list for Founding Scouts; soulbound supporter badges; indexer/subgraph; web app (Next.js + wagmi + OnchainKit); IPFS milestone proofs with a dispute window; more invariant tests (raised = released + pending + available).
+Merkle allow-list for Founding Scouts; indexer/subgraph; web app (Next.js + wagmi + OnchainKit); IPFS milestone proofs with a dispute window; more invariant tests (raised = released + pending + available).
